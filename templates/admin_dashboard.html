@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Administrador</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos generales */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            color: #444;
+            line-height: 1.6;
+        }
+        header {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 20px 10px;
+            text-align: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2, h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        form {
+            margin-bottom: 30px;
+        }
+        label {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #856404;
+            margin-bottom: 20px;
+        }
+        /* Lista de productos y ventas */
+        .product-list, .sales-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        .product-list li, .sales-list li {
+            background-color: #fafafa;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        .sales-details {
+            font-size: 14px;
+            color: #555;
+            margin: 0;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+        .sales-details li {
+            margin-bottom: 5px;
+        }
+        /* Botón de exportar ventas */
+        .btn-export {
+            background-color: #007BFF;
+            color: #fff;
+            text-align: center;
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        .btn-export:hover {
+            background-color: #0056b3;
+        }
+        footer {
+            background-color: #4CAF50;
+            color: #fff;
+            text-align: center;
+            padding: 15px 10px;
+            margin-top: 30px;
+        }
+        footer a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        /* Formulario en fila para filtros */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .filters > div {
+            flex: 1;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Bienvenido, Administrador</h2>
+    </header>
+    <div class="container">
+        <!-- Agregar Producto -->
+        <h3>Agregar Producto</h3>
+        <form action="{{ url_for('add_product') }}" method="POST">
+            <label for="name">Nombre del Producto:</label>
+            <input type="text" name="name" placeholder="Ingrese el nombre del producto" required>
+            <label for="price">Precio:</label>
+            <input type="number" step="0.01" name="price" placeholder="Ingrese el precio" required>
+            <label for="quantity">Cantidad:</label>
+            <input type="number" name="quantity" placeholder="Ingrese la cantidad disponible" required>
+            <button type="submit">Agregar Producto</button>
+        </form>
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert-warning">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Actualizar Producto -->
+        <h3>Actualizar Producto</h3>
+        <form action="{{ url_for('update_product') }}" method="POST">
+            <label for="name">Selecciona el Producto:</label>
+            <select name="name" required>
+                {% for product in products %}
+                    <option value="{{ product.name }}">{{ product.name }} (Stock: {{ product.quantity }})</option>
+                {% endfor %}
+            </select>
+            <label for="quantity">Nueva Cantidad:</label>
+            <input type="number" name="quantity" min="1" placeholder="Ingrese la nueva cantidad">
+            <button type="submit">Actualizar Producto</button>
+        </form>
+
+        <!-- Eliminar Producto -->
+        <h3>Eliminar Producto</h3>
+        <form action="{{ url_for('delete_product') }}" method="POST">
+            <label for="name">Nombre del Producto a Eliminar:</label>
+            <input type="text" name="name" placeholder="Escribe el nombre del producto a eliminar" required>
+            <button type="submit">Eliminar Producto</button>
+        </form>
+
+        <!-- Filtrar Ventas -->
+        <h3>Filtrar Ventas</h3>
+        <form method="POST" action="{{ url_for('admin_dashboard') }}">
+            <div class="filters">
+                <div>
+                    <label for="employee">Empleado:</label>
+                    <select name="employee">
+                        <option value="">Todos</option>
+                        {% for emp in employees %}
+                            <option value="{{ emp }}">{{ emp }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="start_date">Desde:</label>
+                    <input type="date" name="start_date">
+                </div>
+                <div>
+                    <label for="end_date">Hasta:</label>
+                    <input type="date" name="end_date">
+                </div>
+            </div>
+            <button type="submit">Filtrar</button>
+        </form>
+
+        <!-- Exportar Ventas -->
+        <a href="{{ url_for('export_sales') }}" class="btn-export">Exportar Ventas a CSV</a>
+
+        <!-- Historial de Ventas -->
+        <h3>Historial de Ventas</h3>
+            <ul class="sales-list">
+                {% for sale in sales %}
+                    <li>
+                        <div><strong>Fecha:</strong> {{ sale.date.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                        <div><strong>Empleado:</strong> {{ sale.employee }}</div>
+                        <div><strong>Productos:</strong>
+                            <ul class="sales-details">
+                                {% for p in sale.products %}
+                                    <li>{{ p.name }} - {{ p.quantity }} x ${{ p.price }} = ${{ p.quantity * p.price }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div><strong>Total:</strong> ${{ sale.total_cost }}</div>
+                    </li>
+                {% endfor %}
+            </ul>
+    </div>
+
+    <footer>
+        <a href="/logout">Cerrar sesión</a>
+    </footer>
+</body>
+</html>

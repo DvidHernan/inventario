@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel del Empleado</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos generales */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f2f2f2;
+            color: #444;
+            line-height: 1.6;
+        }
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .product-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .product-row label {
+            width: 150px;
+            font-weight: 500;
+        }
+        .product-row select,
+        .product-row input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #856404;
+            margin-bottom: 20px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+        }
+        footer a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Bienvenido, Empleado</h2>
+
+    <form action="{{ url_for('sell_product') }}" method="POST">
+        <div id="products-container">
+            <div class="product-row">
+                <label>Producto:</label>
+                <select name="name[]" required>
+                    {% for product in products %}
+                        <option value="{{ product.name }}">{{ product.name }} (Stock: {{ product.quantity }})</option>
+                    {% endfor %}
+                </select>
+
+                <label>Cantidad:</label>
+                <input type="number" name="quantity[]" required min="1">
+            </div>
+        </div>
+
+        <button type="button" id="add-product">Agregar otro producto</button>
+        <button type="submit">Registrar venta</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert-warning">
+                <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <footer>
+        <a href="/logout">Cerrar sesión</a>
+    </footer>
+</div>
+
+<script>
+    const productsContainer = document.getElementById('products-container');
+    const addProductButton = document.getElementById('add-product');
+    
+    addProductButton.addEventListener('click', () => {
+        const productRow = document.querySelector('.product-row');
+        const newRow = productRow.cloneNode(true);
+        newRow.querySelector('input[name="quantity[]"]').value = '';
+        productsContainer.appendChild(newRow);
+    });
+</script>
+
+</body>
+</html>
