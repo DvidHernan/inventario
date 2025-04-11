@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for, flash, Response
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 import os
 
@@ -8,13 +8,26 @@ app = Flask(__name__)
 
 app.secret_key = os.environ.get("SECRET_KEY")
 mongo_uri = os.environ.get("MONGO_URI")
+app.permanent_session_lifetime = timedelta(minutes=30)
+
 
 # Conexión a MongoDB
-client = MongoClient(mongo_uri)
-db = client["inventory_db"]
-collection = db["items"]
-users_collection = db["users"]
-sales_collection = db["sales"]
+client = none
+db = none
+
+def get_db():
+    global client, db
+    try:
+        if client is None:
+            client = MongoClient(mongo_uri)
+            db = client["inventory_db"]
+        # Test the connection (esto lanza error si está desconectado)
+        client.admin.command('ping')
+    except ConnectionFailure:
+        # Si está desconectado, intenta reconectar
+        client = MongoClient(mongo_uri)
+        db = client["inventory_db"]
+    return db
 
 @app.route('/')
 def index():
@@ -36,7 +49,13 @@ def login_required(role=None):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    db = get_db()
+    collection = db["items"]
+    users_collection = db["users"]
+    sales_collection = db["sales"]
+
     if request.method == 'POST':
+        session.permanent = True  # 🔐 Esto hace que la sesión no sea permanente
         user = request.form['username']
         password = request.form['password']
         user_data = users_collection.find_one({"username": user, "password": password})
@@ -66,6 +85,10 @@ def dashboard():
 @app.route('/admin/dashboard', methods=['GET', 'POST'])
 @login_required(role='admin')
 def admin_dashboard():
+    db = get_db()
+    collection = db["items"]
+    users_collection = db["users"]
+    sales_collection = db["sales"]
     query = {}
 
     # Obtener filtros del formulario
@@ -95,12 +118,20 @@ def admin_dashboard():
 @app.route('/employee/dashboard')
 @login_required(role='employee')
 def employee_dashboard():
+    db = get_db()
+    collection = db["items"]
+    users_collection = db["users"]
+    sales_collection = db["sales"]
     products = list(collection.find())
     return render_template('employee_dashboard.html', products=products)
 
 @app.route('/admin/add_product', methods=['GET', 'POST'])
 @login_required(role='admin')
 def add_product():
+    db = get_db()
+    collection = db["items"]
+    users_collection = db["users"]
+    sales_collection = db["sales"]
     if request.method == 'POST':
         name = request.form['name']
         price = float(request.form['price'])
@@ -125,6 +156,10 @@ def add_product():
 @app.route('/admin/export_sales')
 @login_required(role='admin')
 def export_sales():
+    db = get_db()
+    collection = db["items"]
+    users_collection = db["users"]
+    sales_collection = db["sales"]
     sales = sales_collection.find().sort('date', -1)
 
     # Crear archivo CSV en memoria
@@ -141,6 +176,10 @@ def export_sales():
 @app.route('/admin/update_product', methods=['GET', 'POST'])
 @login_required(role='admin')
 def update_product():
+    db = get_db()
+    collection = db["items"]
+    users_collection = db["users"]
+    sales_collection = db["sales"]
     if request.method == 'POST':
         # Obtener el nombre del producto desde el formulario
         product_name = request.form['name']
@@ -166,6 +205,10 @@ def update_product():
 @app.route('/admin/delete_product/', methods=['GET', 'POST'])
 @login_required(role='admin')
 def delete_product():
+    db = get_db()
+    collection = db["items"]
+    users_collection = db["users"]
+    sales_collection = db["sales"]
     product_name = request.form['name']
     collection.delete_one({'name': product_name})
 
@@ -174,6 +217,10 @@ def delete_product():
 @app.route('/employee/sell_product', methods=['POST'])
 @login_required(role='employee')
 def sell_product():
+    db = get_db()
+    collection = db["items"]
+    users_collection = db["users"]
+    sales_collection = db["sales"]
     if request.method == 'POST':
         # Obtener los datos del formulario
         products_data = request.form.getlist('name[]')  # Asumimos que se envían como lista de productos
