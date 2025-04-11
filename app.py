@@ -12,8 +12,8 @@ app.permanent_session_lifetime = timedelta(minutes=30)
 
 
 # Conexión a MongoDB
-client = none
-db = none
+client = None
+db = None
 
 def get_db():
     global client, db
